@@ -2,6 +2,7 @@
 
 """Pibooth plugin for pCloud upload."""
 
+import glob
 import hashlib
 import os
 import threading
@@ -139,6 +140,9 @@ def pibooth_startup(app, cfg):
 
     LOGGER.info("pCloud plugin ready (region=%s, folder=%s)", region, album_path)
 
+    # Catch up anything left over from previous sessions (e.g. offline uploads).
+    _sync_in_background(app)
+
 
 @pibooth.hookimpl
 def state_wait_enter(cfg, app, win):
@@ -164,26 +168,32 @@ def state_wait_enter(cfg, app, win):
     win.surface.blit(app.pcloud.qr_image, (x, y))
 
 
-@pibooth.hookimpl
-def state_processing_exit(app, cfg):
-    """Upload the captured photo to pCloud (non-blocking)."""
-    if not getattr(app, 'pcloud', None):
-        return
+PICTURE_PATTERN = "*_pibooth.jpg"
 
-    photo_path = app.previous_picture_file
-    folder_path = app.pcloud.folder_path
 
-    def _do_upload():
+def _sync_in_background(app):
+    """Run a catch-up sync in a daemon thread, guarded by the upload lock."""
+    def _do_sync():
         if not app.pcloud.upload_lock.acquire(blocking=False):
-            LOGGER.warning("pCloud upload already in progress, skipping")
+            LOGGER.debug("pCloud sync already in progress, skipping")
             return
         try:
-            app.pcloud.upload_file(photo_path, folder_path)
+            app.pcloud.sync_missing(
+                app.pcloud.local_rep, PICTURE_PATTERN,
+                app.pcloud.folder_path, app.pcloud.folder_id,
+            )
         finally:
             app.pcloud.upload_lock.release()
 
-    thread = threading.Thread(target=_do_upload, daemon=True)
-    thread.start()
+    threading.Thread(target=_do_sync, daemon=True).start()
+
+
+@pibooth.hookimpl
+def state_processing_exit(app, cfg):
+    """Upload captured photo and catch up any missing ones (non-blocking)."""
+    if not getattr(app, 'pcloud', None):
+        return
+    _sync_in_background(app)
 
 
 ###########################################################################
@@ -266,6 +276,37 @@ class PCloudUpload:
             LOGGER.info("pCloud folder ready: %s (id=%s)", path, folder_id)
             return folder_id
         return None
+
+    def list_folder_filenames(self, folder_id):
+        """Return the set of file names present in a remote folder."""
+        data = self._call("listfolder", {"folderid": folder_id})
+        if not data or "metadata" not in data:
+            return None
+        return {entry["name"] for entry in data["metadata"].get("contents", [])
+                if not entry.get("isfolder")}
+
+    def sync_missing(self, local_dir, pattern, remote_folder_path, folder_id):
+        """Upload local files matching pattern that are absent on pCloud.
+
+        Returns the number of files successfully uploaded.
+        """
+        if not os.path.isdir(local_dir):
+            return 0
+
+        remote_names = self.list_folder_filenames(folder_id)
+        if remote_names is None:
+            LOGGER.warning("pCloud sync: cannot list remote folder, skipping")
+            return 0
+
+        uploaded = 0
+        for local_path in sorted(glob.glob(os.path.join(local_dir, pattern))):
+            if os.path.basename(local_path) in remote_names:
+                continue
+            if self.upload_file(local_path, remote_folder_path):
+                uploaded += 1
+        if uploaded:
+            LOGGER.info("pCloud sync: %d missing file(s) uploaded", uploaded)
+        return uploaded
 
     def get_folder_public_link(self, folder_id):
         """Get or create a public link for the folder."""
