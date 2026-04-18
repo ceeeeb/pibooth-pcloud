@@ -5,11 +5,22 @@ pibooth-pcloud
 |PythonVersions| |License|
 
 Plugin ``pibooth-pcloud`` pour `pibooth <https://github.com/pibooth/pibooth>`_
-permettant l'upload automatique des photos vers un serveur `pCloud <https://www.pcloud.com>`_.
+qui envoie automatiquement les photos finales vers un compte
+`pCloud <https://www.pcloud.com>`_ et affiche un QR code vers la galerie
+publique sur l'écran d'attente.
 
-Un QR Code avec le lien public vers la galerie est affiché sur l'écran d'attente.
+Fonctionnalités :
 
-.. note:: Une connexion internet est requise pour le fonctionnement de ce plugin.
+- Authentification par email + mot de passe (digest par appel, aucun OAuth à
+  créer côté pCloud).
+- Upload d'un album par événement (``folder_path/album_name``) et lien public
+  généré sur ce sous-dossier.
+- Synchronisation de rattrapage : au démarrage et après chaque photo, les
+  fichiers présents en local mais absents de pCloud sont envoyés, ce qui
+  absorbe les coupures Internet pendant un événement.
+
+.. note:: Une connexion internet est requise pendant l'événement (ou plus
+          tard pour rattraper les uploads).
 
 Installation
 ------------
@@ -21,47 +32,47 @@ Installation
 Configuration
 -------------
 
-Obtenir un token OAuth2
-~~~~~~~~~~~~~~~~~~~~~~~
+Vérifier les identifiants pCloud
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Créer une application pCloud sur https://docs.pcloud.com/methods/oauth_2.0/authorize.html
-   (noter le ``client_id`` et ``client_secret``)
-
-2. Lancer le script d'aide fourni :
+Le script fourni valide les identifiants et imprime le bloc à coller dans
+``~/.config/pibooth/pibooth.cfg`` :
 
 ::
 
-    python get_token.py
+    pibooth-pcloud-token
 
-3. Le navigateur s'ouvre, autoriser l'application sur pCloud
+L'email doit être vérifié côté pCloud — sans vérification, l'API refuse la
+création de liens publics.
 
-4. Le token est affiché dans le terminal, le copier dans la config pibooth
+Exemple de configuration
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. note:: Le token n'expire pas sauf révocation manuelle depuis les paramètres pCloud.
-
-Options
-~~~~~~~
-
-Éditer le fichier de configuration pibooth (``~/.config/pibooth/pibooth.cfg``) :
+Voir ``pibooth.cfg.example`` à la racine du dépôt. Bloc à ajouter dans
+``~/.config/pibooth/pibooth.cfg`` :
 
 .. code-block:: ini
 
     [PCLOUD]
 
-    # Activer l'upload vers pCloud
+    # Activer le plugin
     activate = True
 
-    # Token OAuth2 pCloud
-    access_token =
+    # Identifiants pCloud (stockés en clair — restreindre les droits du fichier)
+    email = your.email@example.com
+    password = your-password
 
-    # Région du compte pCloud (US ou EU)
+    # Région du compte (EU ou US)
     region = EU
 
-    # Dossier distant sur pCloud
+    # Dossier parent sur pCloud (créé s'il n'existe pas)
     folder_path = /Pibooth
 
+    # Sous-dossier événement sur pCloud ; le lien public cible ce sous-dossier
+    album_name = MonEvenement
+
     # Position du QR code (top-left, top-right, bottom-left, bottom-right, center)
-    qr_position = top-left
+    qr_position = top-right
 
     # Taille du QR code (3-10)
     qr_size = 5
@@ -69,19 +80,26 @@ Options
     # Marge du QR code par rapport au bord (pixels)
     qr_margin = 10
 
+Après édition, restreindre les droits du fichier :
+
+::
+
+    chmod 600 ~/.config/pibooth/pibooth.cfg
+
 Fonctionnement
 --------------
 
-Au démarrage :
+Au démarrage de pibooth :
 
-- Le plugin vérifie le token d'authentification
-- Crée le dossier distant s'il n'existe pas
-- Génère un lien public vers le dossier
-- Affiche un QR Code pointant vers la galerie
+- Authentification par digest, création du dossier parent et de l'album.
+- Récupération du lien public de l'album, génération du QR code.
+- Première passe de synchronisation : les photos locales absentes de pCloud
+  sont envoyées.
 
-Après chaque prise de photo :
+Après chaque photo (``state_processing_exit``) :
 
-- La photo est uploadée en arrière-plan (non-bloquant)
+- Synchronisation en arrière-plan : la nouvelle photo et toute photo
+  restée en retard sont envoyées. L'opération ne bloque pas l'interface.
 
 .. |PythonVersions| image:: https://img.shields.io/badge/python-3.6+-green.svg
    :target: https://www.python.org/downloads/

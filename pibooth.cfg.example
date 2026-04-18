@@ -1,0 +1,28 @@
+[PCLOUD]
+
+# Enable upload to pCloud
+activate = True
+
+# pCloud account email (must be verified on pCloud's side)
+email = your.email@example.com
+
+# pCloud account password (stored in clear, run: chmod 600 pibooth.cfg)
+password = your-password
+
+# Account region: EU or US
+region = EU
+
+# Remote parent folder on pCloud (created if it does not exist)
+folder_path = /Pibooth
+
+# Event sub-folder inside folder_path; the public link points here
+album_name = MyEvent
+
+# QR code position: top-left, top-right, bottom-left, bottom-right, center
+qr_position = top-right
+
+# QR code box_size (3-10)
+qr_size = 5
+
+# QR code margin from screen edge in pixels
+qr_margin = 10

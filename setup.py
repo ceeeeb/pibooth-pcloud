@@ -45,7 +45,7 @@ def main():
             'photobooth',
             'pcloud',
         ],
-        py_modules=['pibooth_pcloud'],
+        py_modules=['pibooth_pcloud', 'pibooth_pcloud_token'],
         install_requires=[
             'pibooth>=2.0.0',
             'qrcode>=6.1',
@@ -55,7 +55,12 @@ def main():
             'bdist_wheel': {'universal': True},
         },
         zip_safe=False,
-        entry_points={'pibooth': ["pibooth_pcloud = pibooth_pcloud"]},
+        entry_points={
+            'pibooth': ["pibooth_pcloud = pibooth_pcloud"],
+            'console_scripts': [
+                "pibooth-pcloud-token = pibooth_pcloud_token:main",
+            ],
+        },
     )
 
 

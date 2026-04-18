@@ -20,7 +20,7 @@ API_HOSTS = {
 }
 
 
-def check_credentials():
+def main():
     print("=" * 60)
     print("  pibooth-pcloud - Verification des identifiants")
     print("=" * 60)
@@ -82,4 +82,4 @@ def check_credentials():
 
 
 if __name__ == "__main__":
-    check_credentials()
+    main()
