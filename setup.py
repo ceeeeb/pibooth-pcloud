@@ -47,7 +47,7 @@ def main():
         ],
         py_modules=['pibooth_pcloud', 'pibooth_pcloud_token'],
         install_requires=[
-            'pibooth>=2.0.0',
+            'pibooth-ceeeeb>=2.0.9',
             'qrcode>=6.1',
             'requests',
         ],
