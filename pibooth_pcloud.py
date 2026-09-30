@@ -94,7 +94,7 @@ def pibooth_startup(app, cfg):
     app.pcloud.qr_position = cfg.get(SECTION, 'qr_position')
     app.pcloud.qr_size = cfg.getint(SECTION, 'qr_size')
     app.pcloud.qr_margin = cfg.getint(SECTION, 'qr_margin')
-    app.pcloud.local_rep = cfg.get('GENERAL', 'directory')
+    app.pcloud.local_rep = cfg.gettuple('GENERAL', 'directory', 'path')[0]
 
     if not app.pcloud.check_credentials():
         LOGGER.error("pCloud authentication failed, plugin disabled")
