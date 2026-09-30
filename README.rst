@@ -71,6 +71,10 @@ Voir ``pibooth.cfg.example`` à la racine du dépôt. Bloc à ajouter dans
     # Sous-dossier événement sur pCloud ; le lien public cible ce sous-dossier
     album_name = MonEvenement
 
+    # Afficher le QR code du lien public sur l'écran d'accueil (les envois
+    # vers pCloud continuent si False)
+    show_qr = True
+
     # Position du QR code (top-left, top-right, bottom-left, bottom-right, center)
     qr_position = top-right
 

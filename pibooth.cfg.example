@@ -18,6 +18,9 @@ folder_path = /Pibooth
 # Event sub-folder inside folder_path; the public link points here
 album_name = MyEvent
 
+# Show the QR code of the public link on the wait screen
+show_qr = True
+
 # QR code position: top-left, top-right, bottom-left, bottom-right, center
 qr_position = top-right
 
