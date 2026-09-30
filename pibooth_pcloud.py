@@ -55,6 +55,9 @@ def pibooth_configure(cfg):
     cfg.add_option(SECTION, 'album_name', 'Pibooth',
                    "Sub-folder (event album) inside folder_path; the public link points here",
                    "Album Name", 'Pibooth')
+    cfg.add_option(SECTION, 'show_qr', True,
+                   "Show the QR code of the public link on the wait screen",
+                   "Show QR Code", ['True', 'False'])
     cfg.add_option(SECTION, 'qr_position', 'top-left',
                    "QR code position (top-left, top-right, bottom-left, bottom-right, center)",
                    "QR Position", ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center'])
@@ -147,7 +150,7 @@ def pibooth_startup(app, cfg):
 @pibooth.hookimpl
 def state_wait_enter(cfg, app, win):
     """Display QR code on the wait screen."""
-    if not getattr(app, 'pcloud', None):
+    if not getattr(app, 'pcloud', None) or not cfg.getboolean(SECTION, 'show_qr'):
         return
 
     win_rect = win.get_rect()
