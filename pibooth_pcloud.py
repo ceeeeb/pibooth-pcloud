@@ -14,7 +14,7 @@ import pygame
 import pibooth
 from pibooth.utils import LOGGER
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 
 SECTION = "PCLOUD"
 
@@ -150,6 +150,18 @@ def pibooth_startup(app, cfg):
 @pibooth.hookimpl
 def state_wait_enter(cfg, app, win):
     """Display QR code on the wait screen."""
+    _draw_qr_code(cfg, app, win)
+
+
+@pibooth.hookimpl
+def state_wait_do(cfg, app, win):
+    """Draw the QR code at each frame: any repaint of the wait screen (template
+    change, printer queue counter, animations) would otherwise erase it."""
+    _draw_qr_code(cfg, app, win)
+
+
+def _draw_qr_code(cfg, app, win):
+    """Draw the QR code of the public folder at its configured position."""
     if not getattr(app, 'pcloud', None) or not cfg.getboolean(SECTION, 'show_qr'):
         return
 
